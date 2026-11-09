@@ -1,0 +1,6 @@
+{
+  "modelo": "Suavizado exponencial simple",
+  "alfa": 0.6145,
+  "nivel_final": 27.63,
+  "entrenado_hasta": "2025-11"
+}

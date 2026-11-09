@@ -1,0 +1,26 @@
+{
+  "Ciudad de Santiago del Estero": {
+    "xgboost_sin_eventos": {
+      "max_depth": 2,
+      "n_estimators": 100,
+      "learning_rate": 0.05
+    },
+    "xgboost_con_eventos": {
+      "max_depth": 2,
+      "n_estimators": 100,
+      "learning_rate": 0.05
+    }
+  },
+  "Termas de Río Hondo": {
+    "xgboost_sin_eventos": {
+      "max_depth": 2,
+      "n_estimators": 300,
+      "learning_rate": 0.1
+    },
+    "xgboost_con_eventos": {
+      "max_depth": 2,
+      "n_estimators": 300,
+      "learning_rate": 0.1
+    }
+  }
+}

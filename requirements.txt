@@ -1,0 +1,12 @@
+# Bibliotecas del prototipo (versiones probadas)
+streamlit==1.67.0
+altair==6.3.0
+pandas==3.1.1
+numpy==2.5.4
+statsmodels==0.15.0
+xgboost==3.4.1
+scikit-learn==1.9.1
+matplotlib==3.11.2
+python-calamine==0.9.1
+xlrd==2.0.2
+openpyxl==3.1.5
