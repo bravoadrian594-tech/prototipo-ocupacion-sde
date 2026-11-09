@@ -1,35 +1,68 @@
 # Prototipo de pronóstico de ocupación - Santiago del Estero
 
-Pronostica la tasa de ocupación de plazas de la ciudad de Santiago del Estero y de
-Termas de Río Hondo para los doce meses siguientes al último mes publicado por el
-INDEC, con tres modelos (suavizado exponencial simple, XGBoost sin eventos y XGBoost
-con eventos), y la muestra en una aplicación web para hospedadores y turistas.
+Trabajo Final de Grado, Licenciatura en Inteligencia Artificial y Robótica (Universidad Siglo 21).
+Autor: Milton Adrián Bravo.
+
+El prototipo pronostica la tasa de ocupación de plazas de la ciudad de Santiago del Estero y de
+Termas de Río Hondo para los doce meses siguientes al último mes publicado por el INDEC (Encuesta
+de Ocupación Hotelera), compara tres modelos (suavizado exponencial simple, XGBoost sin eventos y
+XGBoost con eventos) y muestra el resultado en una aplicación web para hospedadores y turistas.
+
+- Aplicación publicada: https://pronostico-ocupacion-sde.streamlit.app
+- Video de demostración: [link del video]
 
 ## Archivos
 
 | Archivo | Qué hace |
 |---|---|
 | `base.py` | Rutas, zonas y creación de las siete tablas de la base SQLite |
-| `01_preparar_datos.py` | Lee las planillas de la EOH, calcula la tasa y reemplaza 2020-2021 |
-| `02_cargar_eventos.py` | Carga y controla el calendario de eventos |
-| `03_entrenar_modelos.py` | Entrena, evalúa (2024 y 2025) y genera el pronóstico |
-| `app.py` | Aplicación web en Streamlit (solo lectura de la base) |
-| `datos/crudos/indec/` | Planillas originales del INDEC (no se modifican) |
-| `datos/crudos/calendario_eventos.csv` | Calendario de eventos (se puede editar con Excel) |
-| `datos/prototipo.db` | Base de datos que generan los scripts |
-| `datos/procesados/` | Tablas de resultados (métricas, hiperparámetros, series) |
-| `figuras/` | Gráficos para la tesis |
+| `01_preparar_datos.py` | Lee las planillas de la EOH, calcula la tasa y reemplaza 2020-2021 (PB-01, PB-03) |
+| `02_cargar_eventos.py` | Valida y carga el calendario de eventos (PB-02, PB-04) |
+| `03_entrenar_modelos.py` | Entrena, evalúa con 2024 y 2025 y genera el pronóstico (PB-05 a PB-07) |
+| `app.py` | Aplicación web en Streamlit, solo lectura de la base (PB-08, PB-09) |
+| `datos/crudos/indec/` | Planillas originales del INDEC, 2015 a 2025 (no se modifican) |
+| `datos/crudos/calendario_eventos.csv` | Calendario de eventos con fuente de cada uno (se edita con Excel) |
+| `datos/prototipo.db` | Base de datos con la serie, los eventos, las corridas, los pronósticos y las métricas |
+| `datos/procesados/` | Tablas de resultados (métricas e hiperparámetros) |
+| `modelos/` | Modelos entrenados de la última corrida |
+| `figuras/` | Gráficos de la serie y de la evaluación 2025 |
 
-## Ciclo mensual
+## Instalación
 
-Con el entorno activado (`.venv\Scripts\activate`):
+Requisitos: Python 3.13 y Git.
+
+```
+git clone https://github.com/bravoadrian594-tech/prototipo-ocupacion-sde.git
+cd prototipo-ocupacion-sde
+python -m venv .venv
+.venv\Scripts\activate          (en Linux o macOS: source .venv/bin/activate)
+pip install -r requirements.txt
+```
+
+Si PowerShell no deja activar el entorno, ejecutar antes:
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+
+## Ejecución
+
+El repositorio ya incluye la base con los resultados, así que para ver la aplicación alcanza con:
+
+```
+streamlit run app.py
+```
+
+y abrir http://localhost:8501. Agregando `?pantalla=celular` a la dirección se ve la versión para celulares.
+
+Para regenerar todo desde los datos originales:
 
 ```
 python 01_preparar_datos.py
 python 02_cargar_eventos.py
 python 03_entrenar_modelos.py
-streamlit run app.py
 ```
 
-Para actualizar: bajar del INDEC la planilla más nueva de la EOH y ponerla en
-`datos/crudos/indec`, agregar los eventos nuevos al CSV y volver a correr los tres pasos.
+## Actualización mensual
+
+1. Descargar del INDEC la planilla más reciente de la EOH y copiarla en `datos/crudos/indec/`.
+2. Agregar los eventos nuevos en `datos/crudos/calendario_eventos.csv`.
+3. Ejecutar los pasos 1 a 3. Cada ejecución queda registrada como una corrida nueva en la base.
+4. Subir los cambios: `git add .`, `git commit -m "Actualización"` y `git push`. La aplicación publicada se actualiza sola.
