@@ -1,29 +1,25 @@
 """
-PASO 3 - Modelos de pronóstico (Sprints 2 y 3, historias PB-05, PB-06 y PB-07)
+Paso 3: entrena los tres modelos y genera el pronostico.
 
-Tres modelos por zona:
-  - base: suavizado exponencial simple (statsmodels). Proyecta el mismo valor
-    para los doce meses.
-  - xgboost_sin_eventos: XGBoost con el mes del año y la ocupación del mismo
-    mes uno y dos años antes (rezagos de 12 y 24 meses).
-  - xgboost_con_eventos: lo mismo, más la cantidad de eventos de cada nivel de
-    alcance en la zona y el mes. Para los meses a pronosticar solo se cuentan
-    los eventos cuya fecha de publicación es anterior o igual al origen.
+Para cada zona hay un modelo base (suavizado exponencial simple, que repite el
+mismo valor los doce meses) y dos XGBoost. Los dos usan el mes del año y la
+ocupacion del mismo mes uno y dos años antes (rezagos de 12 y 24). El segundo
+ademas usa la cantidad de eventos de cada nivel, pero para los meses a
+pronosticar solo cuento los eventos que ya estaban publicados en el origen.
 
-Evaluación (como dice la tesis):
-  1. Corrida de selección: se entrena hasta dic-2023 y se pronostica 2024.
-     Con 2024 se eligen los hiperparámetros de XGBoost y el modelo ganador de
-     cada zona (menor MAE; si empatan, menor RMSE).
-  2. Corrida de evaluación final: se reentrena hasta dic-2024 y se pronostica
-     2025. Ese MAE y RMSE es el resultado que se informa.
-  3. Corrida de producción: se reentrena hasta el último mes publicado y se
-     pronostican los doce meses siguientes. Es la que muestra la aplicación.
-     Los modelos de esta corrida se guardan en la carpeta modelos/.
+Hago tres corridas:
+- seleccion: entreno hasta dic-2023 y pronostico 2024. Con eso elijo los
+  hiperparametros de XGBoost y el ganador de cada zona (menor MAE; si empatan,
+  menor RMSE)
+- evaluacion final: entreno hasta dic-2024 y pronostico 2025. Este es el error
+  que se informa
+- produccion: entreno hasta el ultimo mes publicado y pronostico los doce
+  siguientes. Es la que muestra la app, y los modelos quedan en modelos/
 
-Los meses imputados de 2020-2021 se usan como rezagos, pero no como meses a
-aprender, porque no son observaciones de la EOH.
+Los meses imputados de 2020-2021 sirven como rezagos pero no para aprender,
+porque no son datos reales de la EOH.
 
-Cómo se corre:   python 03_entrenar_modelos.py
+Uso: python 03_entrenar_modelos.py
 """
 
 import json
@@ -52,7 +48,7 @@ NOMBRE_MODELO = {"base": "Suavizado exponencial simple",
                  "xgboost_con_eventos": "XGBoost con eventos"}
 
 
-# ------------------------------------------------------------ datos
+# --- datos
 def periodo(anio, mes):
     return pd.Period(year=int(anio), month=int(mes), freq="M")
 
@@ -79,7 +75,7 @@ def contar_eventos(eventos, id_zona, per, origen=None):
 
 
 def tabla_entrada(serie_zona, eventos, id_zona, periodos, origen=None):
-    """Mes del año, rezagos de 12 y 24 meses y eventos por nivel para cada período."""
+    """Mes del año, rezagos de 12 y 24 meses y eventos por nivel para cada periodo."""
     tasa = dict(zip(serie_zona.periodo, serie_zona.tasa_ocupacion_plazas))
     filas = []
     for per in periodos:
@@ -88,10 +84,10 @@ def tabla_entrada(serie_zona, eventos, id_zona, periodos, origen=None):
     return pd.DataFrame(filas, index=periodos, columns=["mes", "rezago_12", "rezago_24"] + NIVELES)
 
 
-# ------------------------------------------------------------ modelos
+# --- modelos
 def entrenar_y_pronosticar(serie_zona, eventos, id_zona, corte, horizonte, params, carpeta_modelos=None):
-    """Entrena los tres modelos con datos hasta `corte` y pronostica los períodos del horizonte.
-    Si se indica `carpeta_modelos`, guarda ahí los modelos entrenados."""
+    """Entrena los tres modelos con datos hasta `corte` y pronostica los periodos del horizonte.
+    Si se indica `carpeta_modelos`, guarda ahi los modelos entrenados."""
     hist = serie_zona[serie_zona.periodo <= corte]
     resultado = {}
 
@@ -128,7 +124,7 @@ def errores(real, pron):
 
 
 def ajustar_hiperparametros(serie_zona, eventos, id_zona, corte, prueba):
-    """Prueba cada combinación de la grilla en 2024 y se queda con la de menor MAE."""
+    """Prueba cada combinacion de la grilla en 2024 y se queda con la de menor MAE."""
     real = serie_zona.set_index("periodo").loc[prueba, "tasa_ocupacion_plazas"].values
     mejores = {}
     for modelo in ("xgboost_sin_eventos", "xgboost_con_eventos"):
@@ -149,7 +145,7 @@ def elegir_ganador(metricas):
     return min(metricas, key=lambda m: (metricas[m][0], metricas[m][1]))
 
 
-# ------------------------------------------------------------ base de datos
+# --- base de datos
 def registrar_corrida(con, corte, desde, hasta, version, id_serie, id_cal):
     cur = con.execute("""
         INSERT INTO corrida (fecha_corrida, corte_entrenamiento, evaluacion_desde, evaluacion_hasta,
@@ -174,7 +170,7 @@ def guardar_metricas(con, id_corrida, id_zona, metricas, ganador):
         [(id_corrida, id_zona, m, mae, rmse, int(m == ganador)) for m, (mae, rmse) in metricas.items()])
 
 
-# ------------------------------------------------------------ programa
+# --- programa
 def main():
     con = conectar()
     serie, eventos, id_serie, id_cal = cargar_datos(con)
@@ -187,7 +183,7 @@ def main():
 
     hiper, ganadores, filas_resumen, graficos = {}, {}, [], {}
 
-    # --- 1. selección con 2024
+    # --- 1. seleccion con 2024
     id_sel = registrar_corrida(con, corte_sel, prueba_sel[0], prueba_sel[-1],
                                f"{VERSION} seleccion", id_serie, id_cal)
     for hoja, zona in ZONAS.items():
@@ -204,7 +200,7 @@ def main():
             filas_resumen.append([zona["nombre"], "2024 (selección)", NOMBRE_MODELO[m], *met[m],
                                   "sí" if m == ganadores[iz] else ""])
 
-    # --- 2. evaluación final con 2025
+    # --- 2. evaluacion final con 2025
     id_eval = registrar_corrida(con, corte_eval, prueba_eval[0], prueba_eval[-1],
                                 f"{VERSION} evaluacion " + json.dumps(hiper), id_serie, id_cal)
     met_eval = {}
@@ -221,7 +217,7 @@ def main():
             filas_resumen.append([zona["nombre"], "2025 (evaluación final)", NOMBRE_MODELO[m],
                                   *met_eval[iz][m], "sí" if m == ganadores[iz] else ""])
 
-    # --- 3. producción: doce meses desde el último mes publicado
+    # --- 3. produccion: doce meses desde el ultimo mes publicado
     id_prod = registrar_corrida(con, ultimo, prueba_eval[0], prueba_eval[-1],
                                 f"{VERSION} produccion " + json.dumps(hiper), id_serie, id_cal)
     for hoja, zona in ZONAS.items():
@@ -236,7 +232,7 @@ def main():
     con.commit()
     con.close()
 
-    # --- salidas para la tesis
+    # --- tablas y graficos de resultados
     PROCESADOS.mkdir(parents=True, exist_ok=True)
     resumen = pd.DataFrame(filas_resumen, columns=["Zona", "Período", "Modelo", "MAE", "RMSE", "Ganador"])
     resumen.to_csv(PROCESADOS / "metricas_modelos.csv", index=False, encoding="utf-8-sig")

@@ -1,16 +1,14 @@
 """
-PASO 2 - Calendario de eventos (Sprint 1, historias PB-02 y PB-04)
+Paso 2: carga el calendario de eventos.
 
-Qué hace:
-  1. Lee datos/crudos/calendario_eventos.csv (se puede abrir y editar con Excel).
-  2. Controla cada evento: tipo deportivo o cultural, zona 1 o 2, nivel de
-     alcance de 1 a 4, fecha de fin igual o posterior al inicio y estado
-     confirmado o supuesto. Un evento con datos inválidos se rechaza y se avisa.
-  3. Registra la carga en Carga_Datos y reemplaza la tabla Evento.
-  4. Guarda en datos/procesados/eventos_por_mes.csv la cantidad de eventos de
-     cada nivel por zona y mes (un evento que abarca dos meses cuenta en ambos).
+El calendario esta en datos/crudos/calendario_eventos.csv y se puede editar con
+Excel. Antes de cargarlo reviso que cada evento tenga bien el tipo, la zona, el
+nivel (1 a 4), las fechas y el estado. Si alguno esta mal no se carga y avisa en
+que fila esta. Despues registra la carga, reemplaza la tabla evento y guarda en
+datos/procesados/eventos_por_mes.csv cuantos eventos de cada nivel hay por zona
+y mes. Si un evento ocupa dos meses, cuenta en los dos.
 
-Cómo se corre:   python 02_cargar_eventos.py
+Uso: python 02_cargar_eventos.py
 """
 
 from datetime import date
@@ -31,7 +29,7 @@ def leer_calendario():
     validos = []
     zonas_validas = {str(z["id_zona"]) for z in ZONAS.values()}
     for i, ev in cal.iterrows():
-        fila = i + 2  # número de fila en Excel (la 1 es el encabezado)
+        fila = i + 2  # numero de fila en Excel (la 1 es el encabezado)
         problema = None
         if ev["tipo"].strip().lower() not in ("deportivo", "cultural"):
             problema = "el tipo debe ser 'deportivo' o 'cultural'"

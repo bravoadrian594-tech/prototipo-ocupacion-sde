@@ -1,13 +1,13 @@
 """
-PASO 4 - Aplicación web (Sprint 4, historias PB-08 y PB-09)
+Paso 4: la aplicacion web en Streamlit.
 
-Lee la base en modo solo lectura y muestra dos vistas:
-  - Hospedadores: pronóstico de doce meses por zona, modelo utilizado con su
-    MAE y RMSE, y eventos registrados en el mes elegido.
-  - Turistas: ocupación pronosticada del mes del viaje y nivel esperado
-    (bajo, medio o alto) según los terciles de los meses observados de la zona.
+Abre la base solo para lectura y tiene dos vistas:
+- hospedadores: pronostico de los doce meses de la zona, que modelo se uso con
+  su MAE y RMSE, y los eventos del mes elegido
+- turistas: ocupacion esperada para el mes del viaje y si es baja, media o alta
+  (terciles de los meses observados de la zona)
 
-Cómo se corre en la compu:   streamlit run app.py
+Para correrla en la compu: streamlit run app.py
 """
 
 import sqlite3
@@ -32,7 +32,7 @@ ICONO_TIPO = {"deportivo": "⚽ Deportivo", "cultural": "🎭 Cultural"}
 
 
 def etiqueta_nivel(nivel, tamano="1.6rem"):
-    """Etiqueta de color fuerte (la misma del semáforo) para el nivel esperado."""
+    """Etiqueta de color fuerte (la misma del semaforo) para el nivel esperado."""
     return (f"<span style='background:{COLOR_NIVEL[nivel]}; color:white; font-weight:700; "
             f"font-size:{tamano}; padding:0.1rem 0.7rem; border-radius:8px; white-space:nowrap'>"
             f"{TEXTO_NIVEL[nivel]}</span>")
@@ -41,7 +41,7 @@ st.set_page_config(page_title="Pronóstico de ocupación - Santiago del Estero",
 
 
 def detectar_celular():
-    """True si la página se abre desde un celular. Con ?pantalla=celular o ?pantalla=compu se fuerza."""
+    """True si la pagina se abre desde un celular. Con ?pantalla=celular o ?pantalla=compu se fuerza."""
     forzado = st.query_params.get("pantalla")
     if forzado in ("celular", "compu"):
         return forzado == "celular"
@@ -66,11 +66,11 @@ def etiqueta(anio, mes):
 
 
 def corta(anio, mes):
-    """Etiqueta corta para el eje del gráfico, por ejemplo 'jul 26'."""
+    """Etiqueta corta para el eje del grafico, por ejemplo 'jul 26'."""
     return f"{MESES[mes - 1][:3].lower()} {str(anio)[2:]}"
 
 
-# ------------------------------------------------------------------ datos
+# --- datos
 zonas = leer("SELECT * FROM zona ORDER BY id_zona")
 corridas = leer("SELECT * FROM corrida WHERE version LIKE '%produccion%' ORDER BY id_corrida DESC")
 
@@ -87,7 +87,7 @@ meses_corrida = leer("SELECT DISTINCT anio, mes FROM pronostico WHERE id_corrida
                      (id_corrida,))
 opciones_mes = [etiqueta(a, m) for a, m in zip(meses_corrida["anio"], meses_corrida["mes"])]
 
-# Selectores arriba de la página, para que se vean también en el celular
+# Selectores arriba de la pagina, para que se vean tambien en el celular
 st.markdown("<div style='font-size:0.95rem; font-weight:600; opacity:0.75'>"
             "Pronóstico de ocupación · Santiago del Estero</div>", unsafe_allow_html=True)
 vista = st.segmented_control("¿Quién consulta?", ["Hospedadores", "Turistas"], default="Hospedadores",
@@ -116,7 +116,7 @@ fecha_corrida = datetime.fromisoformat(corrida["fecha_corrida"])
 origen = pd.Period(corrida["corte_entrenamiento"][:7], freq="M")
 mae = float(ganador["mae"])
 
-# Pronóstico con su rango (más o menos el MAE del modelo ganador)
+# Pronostico con su rango (mas o menos el MAE del modelo ganador)
 pron["Mes"] = [etiqueta(a, m) for a, m in zip(pron["anio"], pron["mes"])]
 pron["Eje"] = [corta(a, m) for a, m in zip(pron["anio"], pron["mes"])]
 pron["Mínimo"] = (pron["ocupacion_pronosticada"] - mae).clip(lower=0)
@@ -129,7 +129,7 @@ obs = obs[[pd.Period(year=a, month=m, freq="M") <= origen for a, m in zip(obs["a
 t1, t2 = np.quantile(obs["tasa_ocupacion_plazas"], [1 / 3, 2 / 3])
 pron["Nivel"] = ["Bajo" if v <= t1 else ("Medio" if v <= t2 else "Alto") for v in pron["ocupacion_pronosticada"]]
 
-# Eventos registrados en cada mes del pronóstico
+# Eventos registrados en cada mes del pronostico
 todos_eventos = leer("""SELECT nombre, tipo, fecha_inicio, fecha_fin, nivel_alcance, estado
                         FROM evento WHERE id_zona = ? ORDER BY fecha_inicio""", (id_zona,))
 
@@ -143,7 +143,7 @@ def eventos_del_mes(anio, mes):
 pron["Eventos"] = [len(eventos_del_mes(a, m)) for a, m in zip(pron["anio"], pron["mes"])]
 pron["Nombres"] = [", ".join(eventos_del_mes(a, m)["nombre"]) for a, m in zip(pron["anio"], pron["mes"])]
 
-# Últimos doce meses reales publicados por el INDEC
+# Ultimos doce meses reales publicados por el INDEC
 historia = leer("""SELECT anio, mes, tasa_ocupacion_plazas FROM ocupacion_mensual
                    WHERE id_zona = ? AND origen = 'observado' ORDER BY anio DESC, mes DESC LIMIT 12""",
                 (id_zona,)).iloc[::-1]
@@ -161,9 +161,9 @@ st.sidebar.caption(f"Meses pronosticados: {desde.lower()} a {hasta.lower()}.  \n
                    "Datos oficiales del INDEC (Encuesta de Ocupación Hotelera).")
 
 
-# ------------------------------------------------------------------ avisos (riesgo R5, Tabla 22)
+# --- avisos
 def titulo(texto):
-    """Título principal: más chico en pantallas angostas."""
+    """Titulo principal: mas chico en pantallas angostas."""
     st.markdown(f"<h2 style='font-size:clamp(1.45rem, 5vw, 2.1rem); line-height:1.25; "
                 f"padding:0.2rem 0 0.4rem 0'>{texto}</h2>", unsafe_allow_html=True)
 
@@ -178,7 +178,7 @@ def avisos():
         st.warning("Este pronóstico no se actualiza hace más de dos meses.")
 
 
-# ------------------------------------------------------------------ gráfico
+# --- grafico
 def grafico(resaltado):
     orden = (list(historia["Eje"]) if not ES_CELULAR else []) + list(pron["Eje"])
     eje_x = alt.X("Eje:N", sort=orden, title=None, axis=alt.Axis(labelAngle=-45, labelOverlap=False))
@@ -265,7 +265,7 @@ def lista_eventos(tabla):
 
 
 def proximos_eventos():
-    """Todos los eventos cargados para los meses del pronóstico."""
+    """Todos los eventos cargados para los meses del pronostico."""
     filas = []
     for anio, mes in zip(pron["anio"], pron["mes"]):
         for ev in eventos_del_mes(anio, mes).itertuples():
@@ -283,7 +283,7 @@ def proximos_eventos():
 
 
 def frase_resumen():
-    """Una frase que dice cómo viene el mes elegido, sin números."""
+    """Una frase que dice como viene el mes elegido, sin numeros."""
     mes = mes_elegido.capitalize()
     if fila["Nivel"] == "Alto":
         texto = (f"**{mes} viene muy movido.** Es uno de los meses con más gente del año en "
@@ -365,7 +365,7 @@ def detalle_tecnico():
             "zona y no está validado para alojamientos informales.")
 
 
-# ------------------------------------------------------------------ hospedadores
+# --- hospedadores
 if vista == "Hospedadores":
     titulo(f"¿Cuánta ocupación se espera en {nombre_zona}?")
     avisos()
@@ -425,7 +425,7 @@ if vista == "Hospedadores":
             "la ocupación. El pronóstico es para toda la zona y se calcula con datos de hoteles y "
             "alojamientos registrados, así que en un alojamiento en particular puede ser distinto.")
 
-# ------------------------------------------------------------------ turistas
+# --- turistas
 else:
     titulo(f"¿Cuánta gente se espera en {nombre_zona}?")
     avisos()
@@ -457,7 +457,7 @@ else:
 """)
     detalle_tecnico()
 
-# En el celular la barra lateral queda escondida: la información de actualización va al final
+# En el celular la barra lateral queda escondida: la informacion de actualizacion va al final
 if ES_CELULAR:
     st.divider()
     st.caption(f"Meses pronosticados: {desde.lower()} a {hasta.lower()}. "

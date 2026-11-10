@@ -1,17 +1,14 @@
 """
-PASO 1 - Serie de ocupación del INDEC (Sprint 1, historias PB-01 y PB-03)
+Paso 1: arma la serie mensual de ocupacion con las planillas de la EOH.
 
-Qué hace:
-  1. Descomprime las planillas de la EOH que vienen en .zip (2018 en adelante).
-  2. De cada planilla toma, para cada zona y mes, las plazas disponibles y las
-     plazas ocupadas (fila "Total" de cada bloque) y calcula la tasa de
-     ocupación de plazas = ocupadas / disponibles x 100.
-  3. Reemplaza los meses de 2020 y 2021 por el promedio del mismo mes en
-     2017-2019, guardando el dato original, el origen y la regla aplicada.
-  4. Registra la carga en Carga_Datos y guarda la serie en Ocupacion_Mensual.
-  5. Dibuja la serie de cada zona en figuras/serie_ocupacion.png.
+Descomprime los .zip del INDEC (desde 2018 vienen asi), toma de la fila "Total"
+las plazas disponibles y ocupadas de cada zona y mes, y calcula la tasa
+(ocupadas / disponibles x 100). Los meses de 2020 y 2021 se reemplazan por el
+promedio del mismo mes en 2017-2019, pero el valor original queda guardado junto
+con la regla que se uso. Despues registra la carga, guarda la serie en la base y
+hace el grafico figuras/serie_ocupacion.png.
 
-Cómo se corre:   python 01_preparar_datos.py
+Uso: python 01_preparar_datos.py
 """
 
 import re
@@ -34,7 +31,7 @@ MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
 EXTRAIDOS = INDEC / "extraidos"
 
 
-# ---------------------------------------------------------------- lectura
+# --- lectura
 def descomprimir():
     """Saca las planillas de oferta y demanda de cada .zip (una sola vez)."""
     EXTRAIDOS.mkdir(exist_ok=True)
@@ -48,7 +45,7 @@ def descomprimir():
 
 
 def buscar_fila(tabla, texto):
-    """Primera fila cuya columna 0 contiene el texto (sin importar mayúsculas)."""
+    """Primera fila cuya columna 0 contiene el texto (sin importar mayusculas)."""
     for fila in range(len(tabla)):
         if texto.lower() in str(tabla.iat[fila, 0]).lower():
             return fila
@@ -56,7 +53,7 @@ def buscar_fila(tabla, texto):
 
 
 def columnas_de_meses(tabla):
-    """Columna de cada mes; None si el INDEC todavía no lo publicó."""
+    """Columna de cada mes; None si el INDEC todavia no lo publico."""
     for fila in range(12):
         valores = [str(v).strip().lower() for v in tabla.iloc[fila].tolist()]
         if "enero" in valores:
@@ -65,7 +62,7 @@ def columnas_de_meses(tabla):
 
 
 def valores_total(tabla, texto, columnas):
-    """Los 12 valores de la fila Total del bloque. '-' o '///' quedan vacíos."""
+    """Los 12 valores de la fila Total del bloque. '-' o '///' quedan vacios."""
     fila = buscar_fila(tabla, texto) + 1
     if "total" not in str(tabla.iat[fila, 1]).lower():
         raise ValueError(f"Debajo de '{texto}' no está la fila Total")
@@ -99,12 +96,12 @@ def leer_serie():
     # Un mes sin plazas disponibles no fue publicado (o no tiene dato)
     serie = serie.dropna(subset=["plazas_disponibles"])
     serie = serie[serie["plazas_disponibles"] > 0]
-    # Si un año aparece en dos archivos, se queda el más reciente
+    # Si un año aparece en dos archivos, se queda el mas reciente
     serie = serie.drop_duplicates(["id_zona", "anio", "mes"], keep="last")
     return serie.sort_values(["id_zona", "anio", "mes"]).reset_index(drop=True)
 
 
-# ---------------------------------------------------------------- tasa e imputación
+# --- tasa e imputacion
 def preparar(serie):
     serie["tasa_original"] = (serie["plazas_ocupadas"] / serie["plazas_disponibles"] * 100).round(2)
     serie["tasa_ocupacion_plazas"] = serie["tasa_original"]
@@ -131,7 +128,7 @@ def preparar(serie):
     return serie.sort_values(["id_zona", "anio", "mes"]).reset_index(drop=True)
 
 
-# ---------------------------------------------------------------- guardar
+# --- guardar
 def guardar(serie):
     observados = serie[serie["origen"] == "observado"]
     ultimo = observados.sort_values(["anio", "mes"]).iloc[-1]
@@ -183,7 +180,7 @@ def graficar(serie):
     plt.close(fig)
 
 
-# ----------------------------------------------------------------
+
 if __name__ == "__main__":
     descomprimir()
     serie = preparar(leer_serie())

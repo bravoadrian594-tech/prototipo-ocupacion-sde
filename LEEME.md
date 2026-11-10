@@ -16,10 +16,10 @@ XGBoost con eventos) y muestra el resultado en una aplicación web para hospedad
 | Archivo | Qué hace |
 |---|---|
 | `base.py` | Rutas, zonas y creación de las siete tablas de la base SQLite |
-| `01_preparar_datos.py` | Lee las planillas de la EOH, calcula la tasa y reemplaza 2020-2021 (PB-01, PB-03) |
-| `02_cargar_eventos.py` | Valida y carga el calendario de eventos (PB-02, PB-04) |
-| `03_entrenar_modelos.py` | Entrena, evalúa con 2024 y 2025 y genera el pronóstico (PB-05 a PB-07) |
-| `app.py` | Aplicación web en Streamlit, solo lectura de la base (PB-08, PB-09) |
+| `01_preparar_datos.py` | Lee las planillas de la EOH, calcula la tasa y reemplaza 2020-2021 (PB-01) |
+| `02_cargar_eventos.py` | Valida y carga el calendario de eventos (PB-02) |
+| `03_entrenar_modelos.py` | Entrena, evalúa con 2024 y 2025 y genera el pronóstico (PB-03 a PB-05) |
+| `app.py` | Aplicación web en Streamlit, solo lectura de la base (PB-06 a PB-09) |
 | `datos/crudos/indec/` | Planillas originales del INDEC, 2015 a 2025 (no se modifican) |
 | `datos/crudos/calendario_eventos.csv` | Calendario de eventos con fuente de cada uno (se edita con Excel) |
 | `datos/prototipo.db` | Base de datos con la serie, los eventos, las corridas, los pronósticos y las métricas |
@@ -29,11 +29,11 @@ XGBoost con eventos) y muestra el resultado en una aplicación web para hospedad
 
 ## Instalación
 
-Requisitos: Python 3.13 y Git.
+Requisitos: Python 3.13.
+
+Descomprimir el .zip, abrir una terminal en la carpeta `prototipo-ocupacion-sde` y ejecutar:
 
 ```
-git clone https://github.com/bravoadrian594-tech/prototipo-ocupacion-sde.git
-cd prototipo-ocupacion-sde
 python -m venv .venv
 .venv\Scripts\activate          (en Linux o macOS: source .venv/bin/activate)
 pip install -r requirements.txt

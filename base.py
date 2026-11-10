@@ -1,9 +1,8 @@
 """
-Configuración y base de datos compartidas por todos los scripts del prototipo.
+Lo que comparten todos los scripts: rutas de carpetas, zonas y la base de datos.
 
-Acá están las rutas de las carpetas, las zonas y la creación de las siete
-tablas del modelo de datos (Zona, Carga_Datos, Ocupacion_Mensual, Evento,
-Corrida, Pronostico y Metrica_Modelo). Los demás scripts importan este archivo.
+Aca se crean las siete tablas (zona, carga_datos, ocupacion_mensual, evento,
+corrida, pronostico y metrica_modelo). Los otros scripts importan este archivo.
 """
 
 import sqlite3
